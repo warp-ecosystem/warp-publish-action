@@ -17,7 +17,7 @@ inputs:
   compiler-version:
     description: "npm version or dist-tag for @warp-ecosystem/warp-compiler"
     required: false
-    default: "latest"
+    default: "0.3.0"
   dry-run:
     description: "Run build instead of publish (useful for pull request checks)"
     required: false
@@ -26,19 +26,14 @@ inputs:
 outputs:
   owner:
     description: "The owner of the published package (e.g. @owner)"
-    value: ${{ steps.publish.outputs.owner }}
   id:
     description: "The id of the published package"
-    value: ${{ steps.publish.outputs.id }}
   version:
     description: "The version that was published"
-    value: ${{ steps.publish.outputs.version }}
   status:
     description: "Publish status: 'published' or 'pending' (first publish awaiting review)"
-    value: ${{ steps.publish.outputs.status }}
   url:
     description: "URL of the package on the registry"
-    value: ${{ steps.publish.outputs.url }}
 
 runs:
   using: "node20"

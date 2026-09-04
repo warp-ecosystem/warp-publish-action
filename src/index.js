@@ -1,14 +1,24 @@
-import * as core from "@actions/core";
-import * as exec from "@actions/exec";
+import * as defaultCore from "@actions/core";
+import * as defaultExec from "@actions/exec";
 import { parsePublishOutput, buildPackageUrl } from "./parser.js";
 
 const DEFAULT_REGISTRY_URL = "https://warp.sdisk.us";
+const PINNED_COMPILER_VERSION = "0.3.0";
 
-async function run() {
+/**
+ * Run the warp-compiler CLI to build or publish an extension.
+ *
+ * @param {object} [deps] - Injectable dependencies for testing.
+ * @param {object} deps.core - @actions/core module
+ * @param {object} deps.exec - @actions/exec module
+ */
+export async function run(deps) {
+  const { core = defaultCore, exec = defaultExec } = deps ?? {};
+
   const token = core.getInput("token");
   const registryUrl = core.getInput("registry-url") || DEFAULT_REGISTRY_URL;
   const workingDirectory = core.getInput("working-directory") || ".";
-  const compilerVersion = core.getInput("compiler-version") || "latest";
+  const compilerVersion = core.getInput("compiler-version") || PINNED_COMPILER_VERSION;
   const dryRun = core.getInput("dry-run") === "true";
 
   // Mask the token early so it's redacted even if the CLI echoes it
@@ -42,6 +52,7 @@ async function run() {
     "npx",
     [
       "--yes",
+      "--ignore-scripts",
       `@warp-ecosystem/warp-compiler@${compilerVersion}`,
       command,
       "--registry",
@@ -105,7 +116,3 @@ async function run() {
     );
   }
 }
-
-run().catch((err) => {
-  core.setFailed(err.message);
-});

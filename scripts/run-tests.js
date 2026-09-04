@@ -18,4 +18,8 @@ function findTestFiles(dir) {
 
 const testFiles = [...findTestFiles("tests/unit"), ...findTestFiles("tests/integration")];
 
-run({ files: testFiles }).compose(new defaultSpec()).pipe(process.stdout);
+const stream = run({ files: testFiles });
+stream.on("test:fail", () => {
+  process.exitCode = 1;
+});
+stream.compose(new defaultSpec()).pipe(process.stdout);

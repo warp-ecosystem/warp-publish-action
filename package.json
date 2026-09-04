@@ -5,7 +5,7 @@
   "type": "module",
   "main": "src/index.js",
   "scripts": {
-    "build": "ncc build src/index.js -o dist --source-map --license licenses.txt",
+    "build": "ncc build src/entrypoint.js -o dist --source-map --license licenses.txt",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
