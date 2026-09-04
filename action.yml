@@ -1,0 +1,45 @@
+name: "Warp Publish"
+description: "Build and publish a TurboWarp extension to a Warp Registry instance using the Warp Compiler CLI"
+author: "warp-ecosystem"
+
+inputs:
+  token:
+    description: "Authentication token for the Warp Registry. Pass as secrets.WARP_TOKEN — never a literal."
+    required: false
+  registry-url:
+    description: "URL of the Warp Registry instance"
+    required: false
+    default: "https://warp.sdisk.us"
+  working-directory:
+    description: "Working directory for the compiler (relative to repo root)"
+    required: false
+    default: "."
+  compiler-version:
+    description: "npm version or dist-tag for @warp-ecosystem/warp-compiler"
+    required: false
+    default: "latest"
+  dry-run:
+    description: "Run build instead of publish (useful for pull request checks)"
+    required: false
+    default: "false"
+
+outputs:
+  owner:
+    description: "The owner of the published package (e.g. @owner)"
+    value: ${{ steps.publish.outputs.owner }}
+  id:
+    description: "The id of the published package"
+    value: ${{ steps.publish.outputs.id }}
+  version:
+    description: "The version that was published"
+    value: ${{ steps.publish.outputs.version }}
+  status:
+    description: "Publish status: 'published' or 'pending' (first publish awaiting review)"
+    value: ${{ steps.publish.outputs.status }}
+  url:
+    description: "URL of the package on the registry"
+    value: ${{ steps.publish.outputs.url }}
+
+runs:
+  using: "node20"
+  main: "dist/index.js"
