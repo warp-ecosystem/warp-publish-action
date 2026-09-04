@@ -1,0 +1,101 @@
+name: CD
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate GitHub App Token
+        id: generate_token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        name: Check out repository
+        with:
+          token: ${{ steps.generate_token.outputs.token }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        name: Set up Node.js
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+        name: Install dependencies
+
+      - name: Lint and format
+        run: |
+          npm run format:check
+          npm run lint
+
+      - name: Test
+        run: npm run test
+
+      - name: Verify tag matches package.json version
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "Tag version ($TAG_VERSION) does not match package.json version ($PKG_VERSION)"
+            exit 1
+          fi
+
+      - name: Rebuild dist/
+        run: npm run build
+
+      - name: Verify dist/ is clean
+        run: |
+          if ! git diff --quiet dist/; then
+            echo "::error::dist/ is out of date. Run 'npm run build' and commit the result before tagging."
+            git diff --stat dist/
+            exit 1
+          fi
+
+      - name: Move major version tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          MAJOR_VERSION=$(echo "${GITHUB_REF_NAME}" | sed 's/v\([0-9]*\).*/v\1/')
+          CURRENT_VERSION="${GITHUB_REF_NAME#v}"
+          CURRENT_MAJOR=$(echo "$CURRENT_VERSION" | cut -d. -f1)
+          CURRENT_MINOR=$(echo "$CURRENT_VERSION" | cut -d. -f2)
+          CURRENT_PATCH=$(echo "$CURRENT_VERSION" | cut -d. -f3)
+          REMOTE_SHA=$(git ls-remote origin "refs/tags/$MAJOR_VERSION" | head -1 | awk '{print $1}')
+          SKIP_UPDATE=false
+          if [ -n "$REMOTE_SHA" ]; then
+            git fetch --tags --quiet
+            REMOTE_TAG_COMMIT=$(git rev-parse "$REMOTE_SHA^{commit}" 2>/dev/null || echo "")
+            if [ -n "$REMOTE_TAG_COMMIT" ]; then
+              for TAG in $(git tag -l "v${CURRENT_MAJOR}.*"); do
+                TAG_SHA=$(git rev-parse "${TAG}^{commit}" 2>/dev/null || echo "")
+                if [ "$TAG_SHA" = "$REMOTE_TAG_COMMIT" ] && [ -n "$TAG_SHA" ]; then
+                  REMOTE_MINOR=$(echo "$TAG" | sed 's/v[0-9]*\.\([0-9]*\).*/\1/')
+                  REMOTE_PATCH=$(echo "$TAG" | sed 's/v[0-9]*\.[0-9]*\.\([0-9]*\).*/\1/')
+                  if [ "${REMOTE_MINOR:-0}" -gt "${CURRENT_MINOR:-0}" ] 2>/dev/null; then
+                    SKIP_UPDATE=true
+                  elif [ "${REMOTE_MINOR:-0}" -eq "${CURRENT_MINOR:-0}" ] 2>/dev/null; then
+                    if [ "${REMOTE_PATCH:-0}" -gt "${CURRENT_PATCH:-0}" ] 2>/dev/null; then
+                      SKIP_UPDATE=true
+                    fi
+                  fi
+                  break
+                fi
+              done
+            fi
+          fi
+          if [ "$SKIP_UPDATE" = true ]; then
+            echo "Skipping: existing major tag $MAJOR_VERSION is newer than ${GITHUB_REF_NAME}"
+            exit 0
+          fi
+          git tag -f "$MAJOR_VERSION" "${GITHUB_REF_NAME}"
+          git remote set-url origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
+          git push -f origin "$MAJOR_VERSION"

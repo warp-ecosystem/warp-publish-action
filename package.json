@@ -1,0 +1,40 @@
+{
+  "name": "@warp-ecosystem/warp-publish-action",
+  "version": "1.0.0",
+  "description": "GitHub Action to publish TurboWarp extensions via the Warp Compiler CLI",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "build": "ncc build src/entrypoint.js -o dist --source-map --license licenses.txt",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "test": "node scripts/run-tests.js",
+    "test:unit": "node --test tests/unit/*.test.js",
+    "test:integration": "node --test tests/integration/*.test.js"
+  },
+  "keywords": [
+    "github-action",
+    "turbowarp",
+    "warp-compiler",
+    "warp-registry",
+    "publish"
+  ],
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@actions/core": "^3.0.1",
+    "@actions/exec": "^3.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@vercel/ncc": "^0.38.3",
+    "@warp-ecosystem/warp-compiler": "^0.3.0",
+    "eslint": "^10.9.1",
+    "eslint-config-prettier": "^10.0.1",
+    "prettier": "^3.4.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
