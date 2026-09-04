@@ -22,7 +22,7 @@ jobs:
           node-version: 22
       - uses: warp-ecosystem/warp-publish-action@v1
         with:
-          token: ${{ secrets.WARP_TOKEN }}
+          token: ${{ secrets.WARP_TOKEN }} # Create in GitHub repository settings
 ```
 
 ### Build check on pull requests
