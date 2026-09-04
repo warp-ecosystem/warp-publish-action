@@ -12,9 +12,16 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     steps:
+      - name: Generate GitHub App Token
+        id: generate_token
+        uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a
+        with:
+          app_id: ${{ secrets.APP_ID }}
+          private_key: ${{ secrets.APP_PRIVATE_KEY }}
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         name: Check out repository
         with:
+          token: ${{ steps.generate_token.outputs.token }}
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         name: Set up Node.js
