@@ -8,27 +8,38 @@ on:
 
 jobs:
   lint-format:
+    name: Lint and format
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        name: Check out repository
       - uses: actions/setup-node@v4
+        name: Set up Node.js
         with:
           node-version: 22
           cache: npm
       - run: npm ci
+        name: Install dependencies
       - run: npm run format:check
+        name: Check code formatting
       - run: npm run lint
+        name: Lint code
 
   test:
+    name: Test
     runs-on: ubuntu-latest
     strategy:
       matrix:
         node-version: [18, 20, 22]
     steps:
       - uses: actions/checkout@v4
+        name: Check out repository
       - uses: actions/setup-node@v4
+        name: Set up Node.js
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
       - run: npm ci
+        name: Install dependencies
       - run: npm run test
+        name: Run tests
