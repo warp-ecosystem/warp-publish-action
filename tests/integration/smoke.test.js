@@ -3,6 +3,12 @@ import assert from "node:assert/strict";
 import { run } from "../../src/index.js";
 import { parsePublishOutput, buildPackageUrl } from "../../src/parser.js";
 
+/**
+ * Create a mock implementation of the GitHub Actions @actions/core API.
+ *
+ * @param {object} [inputs={}] - Input values to simulate
+ * @returns {object} Mock core object with inputs, outputs, secrets, logs, warnings, setFailed, and summary
+ */
 function createMockCore(inputs = {}) {
   const outputs = {};
   const secrets = [];
@@ -53,6 +59,14 @@ function createMockCore(inputs = {}) {
   };
 }
 
+/**
+ * Create a mock implementation of @actions/exec's exec function.
+ *
+ * @param {string} [stdout=""] - Simulated stdout output
+ * @param {string} [stderr=""] - Simulated stderr output
+ * @param {number} [exitCode=0] - Simulated exit code
+ * @returns {object} Mock exec object with captured args and exec function
+ */
 function createMockExec(stdout = "", stderr = "", exitCode = 0) {
   let capturedArgs = null;
   return {

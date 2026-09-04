@@ -3,6 +3,12 @@ import { spec as defaultSpec } from "node:test/reporters";
 import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
+/**
+ * Recursively find all test files in a directory.
+ *
+ * @param {string} dir - Directory to search
+ * @returns {string[]} Array of file paths ending in .test.js
+ */
 function findTestFiles(dir) {
   const files = [];
   for (const entry of readdirSync(dir)) {
