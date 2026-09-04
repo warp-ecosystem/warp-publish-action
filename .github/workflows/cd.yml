@@ -58,5 +58,37 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           MAJOR_VERSION=$(echo "${GITHUB_REF_NAME}" | sed 's/v\([0-9]*\).*/v\1/')
+          CURRENT_VERSION="${GITHUB_REF_NAME#v}"
+          CURRENT_MAJOR=$(echo "$CURRENT_VERSION" | cut -d. -f1)
+          CURRENT_MINOR=$(echo "$CURRENT_VERSION" | cut -d. -f2)
+          CURRENT_PATCH=$(echo "$CURRENT_VERSION" | cut -d. -f3)
+          REMOTE_SHA=$(git ls-remote origin "refs/tags/$MAJOR_VERSION" | head -1 | awk '{print $1}')
+          SKIP_UPDATE=false
+          if [ -n "$REMOTE_SHA" ]; then
+            git fetch --tags --quiet
+            REMOTE_TAG_COMMIT=$(git rev-parse "$REMOTE_SHA^{commit}" 2>/dev/null || echo "")
+            if [ -n "$REMOTE_TAG_COMMIT" ]; then
+              for TAG in $(git tag -l "v${CURRENT_MAJOR}.*"); do
+                TAG_SHA=$(git rev-parse "${TAG}^{commit}" 2>/dev/null || echo "")
+                if [ "$TAG_SHA" = "$REMOTE_TAG_COMMIT" ] && [ -n "$TAG_SHA" ]; then
+                  REMOTE_MINOR=$(echo "$TAG" | sed 's/v[0-9]*\.\([0-9]*\).*/\1/')
+                  REMOTE_PATCH=$(echo "$TAG" | sed 's/v[0-9]*\.[0-9]*\.\([0-9]*\).*/\1/')
+                  if [ "${REMOTE_MINOR:-0}" -gt "${CURRENT_MINOR:-0}" ] 2>/dev/null; then
+                    SKIP_UPDATE=true
+                  elif [ "${REMOTE_MINOR:-0}" -eq "${CURRENT_MINOR:-0}" ] 2>/dev/null; then
+                    if [ "${REMOTE_PATCH:-0}" -gt "${CURRENT_PATCH:-0}" ] 2>/dev/null; then
+                      SKIP_UPDATE=true
+                    fi
+                  fi
+                  break
+                fi
+              done
+            fi
+          fi
+          if [ "$SKIP_UPDATE" = true ]; then
+            echo "Skipping: existing major tag $MAJOR_VERSION is newer than ${GITHUB_REF_NAME}"
+            exit 0
+          fi
           git tag -f "$MAJOR_VERSION" "${GITHUB_REF_NAME}"
+          git remote set-url origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
           git push -f origin "$MAJOR_VERSION"
