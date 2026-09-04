@@ -1,4 +1,4 @@
-name: Release
+name: CD
 
 on:
   push:
@@ -6,17 +6,21 @@ on:
 
 jobs:
   release:
+    name: Release
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        name: Check out repository
       - uses: actions/setup-node@v4
+        name: Set up Node.js
         with:
           node-version: 22
           cache: npm
 
       - run: npm ci
+        name: Install dependencies
 
       - name: Lint and format
         run: |
